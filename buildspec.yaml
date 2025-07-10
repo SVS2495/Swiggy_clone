@@ -19,21 +19,21 @@ phases:
     commands:
       - echo "Performing Trivy file scan before building the image..."
       # Uncomment and add commands as needed:
-      # - wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.tar.gz
-      # - tar zxvf trivy_0.19.2_Linux-64bit.tar.gz
-      # - export PATH=$PATH:$PWD
-      # - ./trivy filesystem --exit-code 0 --no-progress . >> trivyfilescan.txt
-      # - echo "Downloading and installing OWASP Dependency-Check..."
-      # - wget https://github.com/jeremylong/DependencyCheck/releases/download/v7.0.2/dependency-check-7.0.2-release.zip
-      # - unzip dependency-check-7.0.2-release.zip
+       - wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.tar.gz
+       - tar zxvf trivy_0.19.2_Linux-64bit.tar.gz
+       - export PATH=$PATH:$PWD
+       - ./trivy filesystem --exit-code 0 --no-progress . >> trivyfilescan.txt
+       - echo "Downloading and installing OWASP Dependency-Check..."
+       - wget https://github.com/jeremylong/DependencyCheck/releases/download/v7.0.2/dependency-check-7.0.2-release.zip
+       - unzip dependency-check-7.0.2-release.zip
 
   build:
     commands:
       - echo "Running tests..."
       - echo "Building Docker image..."
-      # - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
-      # - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
-      # - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
+      - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
+      - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
+      - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
 
 post_build:
   commands:
