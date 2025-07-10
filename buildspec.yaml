@@ -45,12 +45,12 @@ phases:
       - printf '[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json
 
       - echo "Sending build status via SES..."
-      - |
-        aws ses send-email \
-          --from "svs240395@gmail.com" \
-          --destination '{"ToAddresses":["svs240395@gmail.com"]}' \
-          --message '{"Subject":{"Data":"CodeBuild Status: '$CODEBUILD_BUILD_ID'"}, "Body":{"Text":{"Data":"Build status: '$CODEBUILD_BUILD_STATUS'"}}}' \
-          --region "ap-south-1"
+      #- |
+      #  aws ses send-email \
+      #    --from "svs240395@gmail.com" \
+      #    --destination '{"ToAddresses":["svs240395@gmail.com"]}' \
+      #    --message '{"Subject":{"Data":"CodeBuild Status: '$CODEBUILD_BUILD_ID'"}, "Body":{"Text":{"Data":"Build status: '$CODEBUILD_BUILD_STATUS'"}}}' \
+      #    --region "ap-south-1"
 
 artifacts:
   files:
