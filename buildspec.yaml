@@ -22,15 +22,11 @@ phases:
 
   pre_build:
     commands:
-      - echo "Running Trivy file system scan..."
+      - echo "Running Trivy scan..."
       - ./trivy fs . || true
 
       - echo "Running SonarQube analysis..."
-      - sonar-scanner -X \
-          -Dsonar.projectKey=swiggy \
-          -Dsonar.sources=. \
-          -Dsonar.host.url=http://13.201.12.34:9000 \
-          -Dsonar.login=$SONAR_TOKEN
+      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.201.12.34:9000 -Dsonar.login=$SONAR_TOKEN
 
   build:
     commands:
@@ -45,19 +41,20 @@ phases:
 
   post_build:
     commands:
-      - echo "Creating imagedefinitions.json..."
+      - echo "Generating imagedefinitions.json..."
       - printf '[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json
 
-      - echo "Sending build result email via AWS SES..."
+      - echo "Sending build status via SES..."
       - |
         aws ses send-email \
           --from "svs240395@gmail.com" \
           --destination '{"ToAddresses":["svs240395@gmail.com"]}' \
-          --message '{"Subject":{"Data":"CodeBuild Status: '$CODEBUILD_BUILD_ID'"},"Body":{"Text":{"Data":"Build status: '$CODEBUILD_BUILD_STATUS'"}}}' \
+          --message '{"Subject":{"Data":"CodeBuild Status: '$CODEBUILD_BUILD_ID'"}, "Body":{"Text":{"Data":"Build status: '$CODEBUILD_BUILD_STATUS'"}}}' \
           --region "ap-south-1"
 
 artifacts:
   files:
     - appspec.yaml
     - imagedefinitions.json
+
 
