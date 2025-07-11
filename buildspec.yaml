@@ -50,6 +50,7 @@ phases:
       - printf '[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json
 
       - echo "Sending build status via SES..."
+      # Uncomment and configure SES if needed
       #- |
       #  aws ses send-email \
       #    --from "svs240395@gmail.com" \
