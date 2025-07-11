@@ -19,11 +19,16 @@ phases:
       - unzip sonar-scanner.zip
       - mv sonar-scanner-* sonar-scanner
       - export PATH=$PATH:$PWD/sonar-scanner/bin
+      - echo "Installing Babel plugin to fix React build issue..."
+      - npm install --save-dev @babel/plugin-proposal-private-property-in-object
 
   pre_build:
     commands:
       - echo "Running Trivy scan..."
       - ./trivy fs . || true
+
+      - echo "Creating temporary Babel config for build..."
+      - echo '{ "presets": ["react-app"], "plugins": ["@babel/plugin-proposal-private-property-in-object"] }' > babel.config.json
 
       - echo "Running SonarQube analysis..."
       - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.201.12.34:9000 -Dsonar.login=$SONAR_TOKEN
@@ -56,5 +61,6 @@ artifacts:
   files:
     - appspec.yaml
     - imagedefinitions.json
+
 
 
