@@ -24,7 +24,7 @@ phases:
             - echo "Running Trivy scan..."
             - ./trivy fs . || true
             - echo "Creating temporary Babel config..."
-            - { echo ''{ "presets"': [react-app] }
+            - echo { "presets": [react-app] }
             - echo "Running SonarQube analysis..."
             - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.201.12.34:9000 -Dsonar.login=$SONAR_TOKEN
     build:
