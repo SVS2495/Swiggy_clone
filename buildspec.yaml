@@ -1,51 +1,45 @@
 version: 0.2
-
 env:
-  parameter-store:
-    DOCKER_REGISTRY_USERNAME: /cicd/docker-credentials/username
-    DOCKER_REGISTRY_PASSWORD: /cicd/docker-credentials/password
-    DOCKER_REGISTRY_URL: /cicd/docker-registry/url
-    SONAR_TOKEN: /cicd/sonar/sonar-token
-
+    parameter-store:
+        DOCKER_REGISTRY_USERNAME: /cicd/docker-credentials/username
+        DOCKER_REGISTRY_PASSWORD: /cicd/docker-credentials/password
+        DOCKER_REGISTRY_URL: /cicd/docker-registry/url
+        SONAR_TOKEN: /cicd/sonar/sonar-token
 phases:
-  install:
-    runtime-versions:
-      python: 3.11
-      java: corretto17
-    commands:
-      - echo "Installing Trivy & SonarQube scanner..."
-      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
-      - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
-      - unzip sonar-scanner.zip
-      - mv sonar-scanner-* sonar-scanner
-      - export PATH=$PATH:$PWD/sonar-scanner/bin
-      - echo "Installing Babel plugin..."
-      - npm install --save-dev @babel/plugin-proposal-private-property-in-object
-
-  pre_build:
-    commands:
-      - echo "Running Trivy scan..."
-      - ./trivy fs . || true
-      - echo "Creating temporary Babel config..."
-      - echo '{ "presets": ["react-app"], "plugins": ["@babel/plugin-proposal-private-property-in-object"] }' > babel.config.json
-      - echo "Running SonarQube analysis..."
-      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.201.12.34:9000 -Dsonar.login=$SONAR_TOKEN
-
-  build:
-    commands:
-      - echo "Logging in to DockerHub..."
-      - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
-      - echo "Building Docker image..."
-      - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
-      - echo "Pushing Docker image..."
-      - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
-
-  post_build:
-    commands:
-      - echo "Generating imagedefinitions.json..."
-      - printf '[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json
-
+    install:
+        runtime-versions:
+            python: 3.11
+            java: corretto17
+        commands:
+            - 'echo "Installing Trivy & SonarQube scanner..."'
+            - 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -'
+            - 'curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip'
+            - 'unzip sonar-scanner.zip'
+            - 'mv sonar-scanner-* sonar-scanner'
+            - 'export PATH=$PATH:$PWD/sonar-scanner/bin'
+            - 'echo "Installing Babel plugin..."'
+            - 'npm install --save-dev @babel/plugin-proposal-private-property-in-object'
+    pre_build:
+        commands:
+            - 'echo "Running Trivy scan..."'
+            - './trivy fs . || true'
+            - 'echo "Creating temporary Babel config..."'
+            - { 'echo ''{ "presets"': [react-app] }
+            - 'echo "Running SonarQube analysis..."'
+            - 'sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.201.12.34:9000 -Dsonar.login=$SONAR_TOKEN'
+    build:
+        commands:
+            - 'echo "Logging in to DockerHub..."'
+            - 'echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"'
+            - 'echo "Building Docker image..."'
+            - 'docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .'
+            - 'echo "Pushing Docker image..."'
+            - 'docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"'
+    post_build:
+        commands:
+            - 'echo "Generating imagedefinitions.json..."'
+            - 'printf ''[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]'' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json'
 artifacts:
-  files:
-    - appspec.yaml
-    - imagedefinitions.json
+    files:
+        - appspec.yaml
+        - imagedefinitions.json
