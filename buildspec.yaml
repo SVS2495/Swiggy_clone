@@ -26,10 +26,8 @@ phases:
     commands:
       - echo "Running Trivy scan..."
       - ./trivy fs . || true
-
       - echo "Creating temporary Babel config for build..."
       - echo '{ "presets": ["react-app"], "plugins": ["@babel/plugin-proposal-private-property-in-object"] }' > babel.config.json
-
       - echo "Running SonarQube analysis..."
       - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.201.12.34:9000 -Dsonar.login=$SONAR_TOKEN
 
@@ -37,10 +35,8 @@ phases:
     commands:
       - echo "Logging in to DockerHub..."
       - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
-
       - echo "Building Docker image..."
       - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
-
       - echo "Pushing Docker image to DockerHub..."
       - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
 
@@ -48,20 +44,15 @@ phases:
     commands:
       - echo "Generating imagedefinitions.json..."
       - printf '[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json
-
-      - echo "Sending build status via SES..."
-      # Uncomment and configure SES if needed
-      #- |
-      #  aws ses send-email \
-      #    --from "svs240395@gmail.com" \
-      #    --destination '{"ToAddresses":["svs240395@gmail.com"]}' \
-      #    --message '{"Subject":{"Data":"CodeBuild Status: '$CODEBUILD_BUILD_ID'"}, "Body":{"Text":{"Data":"Build status: '$CODEBUILD_BUILD_STATUS'"}}}' \
-      #    --region "ap-south-1"
+      - echo "Build complete. SES notification is currently disabled."
+      # To enable SES, uncomment below and set verified SES email
+      # - aws ses send-email \
+      #     --from "svs240395@gmail.com" \
+      #     --destination '{"ToAddresses":["svs240395@gmail.com"]}' \
+      #     --message '{"Subject":{"Data":"CodeBuild Status: '$CODEBUILD_BUILD_ID'"}, "Body":{"Text":{"Data":"Build status: '$CODEBUILD_BUILD_STATUS'"}}}' \
+      #     --region "ap-south-1"
 
 artifacts:
   files:
     - appspec.yaml
     - imagedefinitions.json
-
-
-
