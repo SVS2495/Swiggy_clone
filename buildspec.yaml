@@ -41,13 +41,14 @@ phases:
 
   post_build:
     commands:
-      - |
-        aws ses send-email \
-          --from "svs240395@gmail.com" \
-          --to "svs240395@gmail.com" \
-          --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" \
-          --text "Build status: $CODEBUILD_BUILD_STATUS" \
-          --region "ap-south-1"
+      - echo "Skipping SES email (email not verified)"
+      # - |
+      #     aws ses send-email \
+      #       --from "svs240395@gmail.com" \
+      #       --to "svs240395@gmail.com" \
+      #       --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" \
+      #       --text "Build status: $CODEBUILD_BUILD_STATUS" \
+      #       --region "ap-south-1"
 
 artifacts:
   files:
