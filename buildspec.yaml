@@ -18,19 +18,14 @@ phases:
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
       - unzip sonar-scanner.zip
       - mv sonar-scanner-* sonar-scanner
-      - echo 'export PATH=$PATH:$PWD/sonar-scanner/bin' >> ~/.bashrc
       - export PATH=$PATH:$PWD/sonar-scanner/bin
-      # Optional: Install npm if not present, then Babel plugin if needed
-      # - apt-get update && apt-get install -y npm
-      # - npm install --save-dev @babel/plugin-proposal-private-property-in-object
+      - echo "Installing Babel plugin..."
+      - npm install --save-dev @babel/plugin-proposal-private-property-in-object
 
   pre_build:
     commands:
-      - set -e
-      - echo "Updating Trivy database..."
-      - ./trivy --download-db-only
       - echo "Running Trivy scan..."
-      - ./trivy fs . || true  # Allow failures, do not break build
+      - ./trivy fs . || true
       - echo "Creating temporary Babel config..."
       - echo '{ "presets": ["react-app"], "plugins": ["@babel/plugin-proposal-private-property-in-object"] }' > babel.config.json
       - echo "Running SonarQube analysis..."
@@ -38,8 +33,7 @@ phases:
 
   build:
     commands:
-      - set -e
-      - echo "Logging in to Docker registry..."
+      - echo "Logging in to DockerHub..."
       - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
       - echo "Building Docker image..."
       - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
