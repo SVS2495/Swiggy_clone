@@ -23,7 +23,7 @@ phases:
   pre_build:
     commands:
       - echo "Running Trivy scan..."
-      - ./trivy fs . || true
+      - ./trivy fs . > trivy-scan-report.txt || true
 
       - echo "Running SonarQube analysis..."
       - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.201.12.34:9000 -Dsonar.login=$SONAR_TOKEN
