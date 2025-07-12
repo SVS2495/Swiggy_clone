@@ -56,5 +56,6 @@ artifacts:
   files:
     - appspec.yaml
     - imagedefinitions.json
+    - trivy-scan-report.txt
 
 
