@@ -1,27 +1,15 @@
 DevSecOps Blue-Green Deployment - Swiggy Clone Project
 Introduction:
-In the realm of modern software development, DevSecOps practices are gaining prominence for
-their emphasis on integrating security seamlessly into the software development lifecycle. One
-critical aspect of this approach is implementing efficient deployment strategies that not only
-ensure reliability but also maintain security standards. In this blog post, we will delve into the
-concept of Blue-Green deployment and demonstrate how to apply it to a Swiggy-clone
-application hosted on AWS ECS (Elastic Container Service) using AWS CodePipeline.
+In the realm of modern software development, DevSecOps practices are gaining prominence for their emphasis on integrating security seamlessly into the software development lifecycle. One critical aspect of this approach is implementing efficient deployment strategies that not only ensure reliability but also maintain security standards. In this blog post, we will delve into the concept of Blue-Green deployment and demonstrate how to apply it to a Swiggy-clone application hosted on AWS ECS (Elastic Container Service) using AWS CodePipeline.
+
 What is Blue-Green Deployment?
-Blue-Green deployment is a technique used to minimize downtime and risk during the release
-of new versions of an application. In this approach, two identical production environments,
-termed ‘Blue’ and ‘Green’, are maintained. At any given time, only one environment (e.g., Blue)
-serves live traffic while the other (e.g., Green) remains idle. When a new version is to be
-deployed, the new version is deployed to the idle environment (Green). Once the deployment is
-validated, traffic is seamlessly switched to the updated environment (Green), allowing for quick
-rollback to the previous version if issues arise.
-Setting up AWS ECS for Swiggy-Clone:
+Blue-Green deployment is a technique used to minimize downtime and risk during the release of new versions of an application. In this approach, two identical production environments, termed ‘Blue’ and ‘Green’, are maintained. At any given time, only one environment (e.g., Blue) serves live traffic while the other (e.g., Green) remains idle. When a new version is to be deployed, the new version is deployed to the idle environment (Green). Once the deployment is validated, traffic is seamlessly switched to the updated environment (Green), allowing for quick rollback to the previous version if issues arise. Setting up AWS ECS for Swiggy-Clone:
 To demonstrate Blue-Green deployment, we’ll use AWS ECS to host our Swiggy-clone
 application. ECS is a highly scalable container orchestration service provided by AWS.
 Implementing Blue-Green Deployment with AWS CodePipeline:
 AWS CodePipeline is a fully managed continuous integration and continuous delivery (CI/CD)
 service that automates the build, test, and deployment phases of your release process. Let’s
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 see how to set up a Blue-Green deployment pipeline using AWS CodePipeline:
 1. Source Stage: Connect your CodePipeline to your source code repository (e.g., GitHub).
 Trigger the pipeline when changes are detected in the repository.
@@ -36,13 +24,12 @@ c. After deployment, automate the ALB routing to gradually shift traffic from th
 the Green service based on predefined health checks.
 d. Monitor the deployment process and rollback automatically if issues occur during the
 transition.
-GitHub repo: 
+GitHub repo: https://github.com/SVS2495/Swiggy_clone.git
 Step:-1 : Create a Sonar Server
 To run Static Code Analysis we need a sonar server.
 Create a key-pair for this purpose.
 i. Navigate to key-pairs in AWS Console and click on “Create key- pair”.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 ii. Provide a name and select key-pair rype as .pem then click on create.
 The .pem file will be downloaded to your local.
 3. Navigate to EC2 console and click on “Launch Instance”.
@@ -54,7 +41,6 @@ The .pem file will be downloaded to your local.
 You can use EC2 instance connect or SSH with the pem file you downloaded.
 9. Install docker.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 # Installing Docker
 sudo apt update
 sudo apt install docker.io -y
@@ -71,7 +57,6 @@ Username & Password: admin
 Step:2 :- SonarQube Set-Up.
 After getting log-in create a custom password.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 2. Click on “manually” (<>).
 3. Click on “locally”.
 4. Provide a name for it.
@@ -82,7 +67,6 @@ DevSecOps Blue-Green Deployment - Swiggy Clone Project
 9. Click on “create parameter”.
 9. Give a name for it.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 Note: This must be edited in buildspec.yaml file.
 10. Provide the copied token in the value section.
 11. Similarly create parameters for Docker Username, Password and URI.
@@ -97,7 +81,6 @@ Navigate to AWS Codebuild console and click on “create project”.
 2. Provide a name for it.
 3. Under source select github as a source provider.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 4. Select Connect using OAuth.
 5. After this it will ask for permissions and github login do all the stuff.
 6. Under GitHub repo, select the one your application code relies.
@@ -108,7 +91,6 @@ DevSecOps Blue-Green Deployment - Swiggy Clone Project
 11. In IAM click on the role that the codebuild created.
 12. Give “AmazonSSMFullAccess” to access the parameters in Systems Manager and
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 “AWSS3FullAccess” to upload the artifacts.
 13. Click on “Start build”.
 Upon successful build it will look like:
@@ -120,7 +102,6 @@ Step:4A :- ECS Cluster Creation
 Navigate to ECS and click on “Create cluster”.
 2. Provide a name for it.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 2. Under infrastructure select “Amazon EC2 instances”
 3. Give OS as Amazon Linux 2 and instance type as “t2.medium”.
 4. Give Desired Capacity min as 2 and max as 3.
@@ -131,7 +112,6 @@ In the same ECS console click on “Task Definition” and then “create new ta
 2. Give a name for it and under “infra requirements” select “Amazon EC2 instances”.
 3. Give the configuration as below.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 4. Under container provide Name, Image and container port .
 5. Under monitoring select as below and click “create”.
 Step:4C :- Load Balancer Creation
@@ -142,7 +122,6 @@ Navigate to EC2 and under Load Balancer click on “Create load balancer”.
 4. Under Listeners and routing click on “Create target group”.
 5. Give a target group name.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 6. Click on “Next”.
 7. Select the ECS registered instances and give port for them.
 8. Click on “Create target group”.
@@ -153,7 +132,6 @@ Navigate to roles in IAM and click on “Create role”.
 12. Select Use case as “CodeDeploy-ECS”
 13. Click on “Next”.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 14. Give a name for it.
 15. Click on Create.
 Step:4D :- ECS Service Creation
@@ -165,7 +143,6 @@ Under Created ECS cluster and Service section click on “create”.
 5. In the Load balancing section select type as ALB and opt the one you have created.
 6. Use existing Listener and Target group and TG-2 create a one.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 7. Click on “Create”
 8. Upon Successful service creation it looks like as:
 9. Navigate to load balancer and copy the DNS name.
@@ -177,7 +154,6 @@ Observe that the tab name is “Swiggy Application”.
 definition arn with yours.
 version: 0.0
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 Resources:
  - TargetService:
  Type: AWS::ECS::Service
@@ -193,7 +169,6 @@ Navigate to Code Pipeline in AWS console and click on “create pipeline”.
 4. For source code you need to provide access for github so click on “Connect to GitHub”.
 5. Provide a connection name.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 6. Click on “Install a new app”.
 7. Login to GitHub using your credentials.
 8. Grant access for that particular repo and save it.
@@ -204,7 +179,6 @@ DevSecOps Blue-Green Deployment - Swiggy Clone Project
 13. Under the deploy stage add AWS CodeDeploy as deploy provider.
 13. Select the application name and deployment group created by the ECS service.
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 14. Review and Click on “create”.
 Step:6 :- ECS Deployment.
 Now make some changes to the application code.
@@ -217,7 +191,6 @@ When the push happens code pipeline triggers automatically with webhook.
 “Terminate original task set”. It tooks less time.
 7. Upon success code pipeline looks as :
 
-DevSecOps Blue-Green Deployment - Swiggy Clone Project
 8. Now navigate to load balancer section and click on the created one.
 9. Copy the DNS of that load balancer.
 Observe that the traffic is routing to TG-2 (Green) instead of TG-1(Blue).
