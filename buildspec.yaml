@@ -6,6 +6,7 @@ env:
     DOCKER_REGISTRY_PASSWORD: /cicd/docker-credentials/password
     DOCKER_REGISTRY_URL: /cicd/docker-registry/url
     SONAR_TOKEN: /cicd/sonar/sonar-token
+    NVD_API_KEY: /cicd/owasp/nvd-api-key  # 🔑 Add this in AWS Parameter Store
 
 phases:
   install:
@@ -35,14 +36,10 @@ phases:
 
       - echo "Running OWASP Dependency-Check scan..."
       - mkdir -p dependency-check-report
-      - ./dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report || true
+      - ./dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report --nvdApiKey $NVD_API_KEY || true
 
       - echo "Running SonarQube analysis..."
-      - sonar-scanner -X \
-          -Dsonar.projectKey=swiggy \
-          -Dsonar.sources=. \
-          -Dsonar.host.url=http://13.233.128.31:9000 \
-          -Dsonar.login=$SONAR_TOKEN
+      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN
 
   build:
     commands:
