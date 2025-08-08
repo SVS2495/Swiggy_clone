@@ -26,7 +26,7 @@ phases:
       - ./trivy fs . > trivy-scan-report.txt || true
 
       - echo "Running SonarQube analysis..."
-      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.195.70:9000 -Dsonar.login=$SONAR_TOKEN
+      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN
 
   build:
     commands:
