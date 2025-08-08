@@ -13,20 +13,19 @@ phases:
       python: 3.11
       java: corretto17
     commands:
-      - echo "Installing Trivy, SonarQube scanner, and OWASP Dependency-Check..."
-      
-      # Install Trivy
-      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+      - echo "Installing Trivy..."
+      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
 
-      # Install SonarScanner
+      - echo "Installing SonarQube Scanner..."
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
       - unzip sonar-scanner.zip
       - mv sonar-scanner-* sonar-scanner
       - export PATH=$PATH:$PWD/sonar-scanner/bin
 
-      # Install OWASP Dependency-Check CLI
-      - curl -sSLo dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
-      - unzip dependency-check.zip -d dependency-check
+      - echo "Installing OWASP Dependency-Check..."
+      - curl -sSLo dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.7/dependency-check-9.0.7-release.zip
+      - unzip dependency-check.zip -d dependency-check-dir
+      - mv dependency-check-dir/* dependency-check
       - chmod +x dependency-check/bin/dependency-check.sh
 
   pre_build:
@@ -34,11 +33,16 @@ phases:
       - echo "Running Trivy scan..."
       - ./trivy fs . > trivy-scan-report.txt || true
 
-      - echo "Running SonarQube analysis..."
-      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN
-
-      - echo "Running OWASP Dependency-Check..."
+      - echo "Running OWASP Dependency-Check scan..."
+      - mkdir -p dependency-check-report
       - ./dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report || true
+
+      - echo "Running SonarQube analysis..."
+      - sonar-scanner -X \
+          -Dsonar.projectKey=swiggy \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=http://13.233.128.31:9000 \
+          -Dsonar.login=$SONAR_TOKEN
 
   build:
     commands:
@@ -61,5 +65,5 @@ artifacts:
     - appspec.yaml
     - imagedefinitions.json
     - trivy-scan-report.txt
-    - dependency-check-report/dependency-check-report.html
-    - dependency-check-report/dependency-check-report.json
+  base-directory: dependency-check-report
+  discard-paths: no
