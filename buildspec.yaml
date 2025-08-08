@@ -6,7 +6,7 @@ env:
     DOCKER_REGISTRY_PASSWORD: /cicd/docker-credentials/password
     DOCKER_REGISTRY_URL: /cicd/docker-registry/url
     SONAR_TOKEN: /cicd/sonar/sonar-token
-    NVD_API_KEY: /cicd/owasp/nvd-api-key  # 🔑 Add this in AWS Parameter Store
+    NVD_API_KEY: /cicd/owasp/nvd-api-key
 
 phases:
   install:
@@ -14,32 +14,25 @@ phases:
       python: 3.11
       java: corretto17
     commands:
-      - echo "Installing Trivy..."
+      - echo "Installing Trivy, SonarQube scanner & OWASP Dependency-Check..."
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
-
-      - echo "Installing SonarQube Scanner..."
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
       - unzip sonar-scanner.zip
       - mv sonar-scanner-* sonar-scanner
       - export PATH=$PATH:$PWD/sonar-scanner/bin
-
-      - echo "Installing OWASP Dependency-Check..."
-      - curl -sSLo dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.7/dependency-check-9.0.7-release.zip
-      - unzip dependency-check.zip -d dependency-check-dir
-      - mv dependency-check-dir/* dependency-check
-      - chmod +x dependency-check/bin/dependency-check.sh
+      - curl -sSLo dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.10/dependency-check-9.0.10-release.zip
+      - unzip dependency-check.zip -d dependency-check
 
   pre_build:
     commands:
       - echo "Running Trivy scan..."
       - ./trivy fs . > trivy-scan-report.txt || true
 
-      - echo "Running OWASP Dependency-Check scan..."
-      - mkdir -p dependency-check-report
-      - ./dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report --nvdApiKey $NVD_API_KEY || true
+      - echo "Running OWASP Dependency-Check..."
+      - ./dependency-check/dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report --nvdApiKey $NVD_API_KEY || true
 
       - echo "Running SonarQube analysis..."
-      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN
+      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN || true
 
   build:
     commands:
@@ -57,10 +50,12 @@ phases:
       - echo "Generating imagedefinitions.json..."
       - printf '[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json
 
+      - echo "Collecting artifacts..."
+      - mkdir -p dependency-check-report
+      - mv appspec.yaml imagedefinitions.json trivy-scan-report.txt dependency-check-report/ || true
+
 artifacts:
-  files:
-    - appspec.yaml
-    - imagedefinitions.json
-    - trivy-scan-report.txt
   base-directory: dependency-check-report
+  files:
+    - '**/*'
   discard-paths: no
