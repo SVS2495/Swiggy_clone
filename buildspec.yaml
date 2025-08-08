@@ -13,15 +13,19 @@ phases:
       python: 3.11
       java: corretto17
     commands:
-      - echo "Installing Trivy, OWASP Dependency Check & SonarQube Scanner..."
+      - echo "Installing Trivy..."
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
+
+      - echo "Installing SonarQube scanner..."
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
-      - unzip sonar-scanner.zip
+      - unzip sonar-scanner.zip > /dev/null
       - mv sonar-scanner-* sonar-scanner
       - export PATH=$PATH:$PWD/sonar-scanner/bin
+
+      - echo "Installing OWASP Dependency Check..."
       - curl -sSLo dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
-      - unzip dependency-check.zip -d dependency-check
-      - chmod +x dependency-check/bin/dependency-check.sh
+      - unzip dependency-check.zip -d dependency-check > /dev/null
+      - chmod +x dependency-check/dependency-check/bin/dependency-check.sh
 
   pre_build:
     commands:
@@ -30,17 +34,19 @@ phases:
 
       - echo "Running OWASP Dependency Check..."
       - mkdir -p dependency-check-report
-      - ./dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report || true
+      - ./dependency-check/dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report || true
 
-      - echo "Running SonarQube analysis..."
-      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN || true
+      - echo "Running SonarQube scan..."
+      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN || true
 
   build:
     commands:
-      - echo "Logging in to DockerHub..."
+      - echo "Logging into DockerHub..."
       - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
+
       - echo "Building Docker image..."
       - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
+
       - echo "Pushing Docker image to DockerHub..."
       - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
 
