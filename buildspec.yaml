@@ -6,7 +6,6 @@ env:
     DOCKER_REGISTRY_PASSWORD: /cicd/docker-credentials/password
     DOCKER_REGISTRY_URL: /cicd/docker-registry/url
     SONAR_TOKEN: /cicd/sonar/sonar-token
-    NVD_API_KEY: /cicd/owasp/nvd-api-key
 
 phases:
   install:
@@ -14,22 +13,24 @@ phases:
       python: 3.11
       java: corretto17
     commands:
-      - echo "Installing Trivy, SonarQube scanner & OWASP Dependency-Check..."
+      - echo "Installing Trivy, OWASP Dependency Check & SonarQube Scanner..."
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
       - unzip sonar-scanner.zip
       - mv sonar-scanner-* sonar-scanner
       - export PATH=$PATH:$PWD/sonar-scanner/bin
-      - curl -sSLo dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.10/dependency-check-9.0.10-release.zip
+      - curl -sSLo dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
       - unzip dependency-check.zip -d dependency-check
+      - chmod +x dependency-check/bin/dependency-check.sh
 
   pre_build:
     commands:
       - echo "Running Trivy scan..."
       - ./trivy fs . > trivy-scan-report.txt || true
 
-      - echo "Running OWASP Dependency-Check..."
-      - ./dependency-check/dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report --nvdApiKey $NVD_API_KEY || true
+      - echo "Running OWASP Dependency Check..."
+      - mkdir -p dependency-check-report
+      - ./dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report || true
 
       - echo "Running SonarQube analysis..."
       - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN || true
@@ -38,10 +39,8 @@ phases:
     commands:
       - echo "Logging in to DockerHub..."
       - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
-
       - echo "Building Docker image..."
       - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
-
       - echo "Pushing Docker image to DockerHub..."
       - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
 
@@ -50,12 +49,10 @@ phases:
       - echo "Generating imagedefinitions.json..."
       - printf '[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json
 
-      - echo "Collecting artifacts..."
-      - mkdir -p dependency-check-report
-      - mv appspec.yaml imagedefinitions.json trivy-scan-report.txt dependency-check-report/ || true
-
 artifacts:
-  base-directory: dependency-check-report
+  base-directory: .
   files:
-    - '**/*'
-  discard-paths: no
+    - appspec.yaml
+    - imagedefinitions.json
+    - trivy-scan-report.txt
+    - dependency-check-report/**/*
