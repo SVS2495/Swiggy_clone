@@ -13,29 +13,32 @@ phases:
       python: 3.11
       java: corretto17
     commands:
-      - echo "Installing Trivy..."
-      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
+      - echo "Installing Trivy, SonarQube scanner, and OWASP Dependency-Check..."
+      
+      # Install Trivy
+      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
 
-      - echo "Installing SonarQube scanner..."
+      # Install SonarScanner
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
       - unzip sonar-scanner.zip
       - mv sonar-scanner-* sonar-scanner
       - export PATH=$PATH:$PWD/sonar-scanner/bin
 
-      - echo "Installing OWASP Dependency-Check..."
-      - curl -L -o dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
+      # Install OWASP Dependency-Check CLI
+      - curl -sSLo dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
       - unzip dependency-check.zip -d dependency-check
+      - chmod +x dependency-check/bin/dependency-check.sh
 
   pre_build:
     commands:
-      - echo "Running Trivy FileSystem scan..."
-      - ./trivy fs node_modules --scanners vuln --exit-code 0 --format table --output trivy-scan-report.txt || true
-
-      - echo "Running OWASP Dependency-Check..."
-      - ./dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report
+      - echo "Running Trivy scan..."
+      - ./trivy fs . > trivy-scan-report.txt || true
 
       - echo "Running SonarQube analysis..."
-      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.201.12.34:9000 -Dsonar.login=$SONAR_TOKEN
+      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN
+
+      - echo "Running OWASP Dependency-Check..."
+      - ./dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report || true
 
   build:
     commands:
@@ -50,9 +53,6 @@ phases:
 
   post_build:
     commands:
-      - echo "Running Trivy Image Scan..."
-      - ./trivy image "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" --format table --output trivy-image-scan.txt || true
-
       - echo "Generating imagedefinitions.json..."
       - printf '[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json
 
@@ -61,5 +61,5 @@ artifacts:
     - appspec.yaml
     - imagedefinitions.json
     - trivy-scan-report.txt
-    - trivy-image-scan.txt
-  base-directory: dependency-check-report
+    - dependency-check-report/dependency-check-report.html
+    - dependency-check-report/dependency-check-report.json
