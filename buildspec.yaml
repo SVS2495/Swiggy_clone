@@ -34,7 +34,7 @@ phases:
 
       - echo "Running OWASP Dependency Check..."
       - mkdir -p dependency-check-report
-      - ./dependency-check/dependency-check/bin/dependency-check.sh --project "Swiggy Clone" --scan . --format ALL --out dependency-check-report || true
+      - ./dependency-check/dependency-check/bin/dependency-check.sh --project "Swiggy_Clone" --scan . --format ALL --out dependency-check-report || true
 
       - echo "Running SonarQube scan..."
       - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN || true
