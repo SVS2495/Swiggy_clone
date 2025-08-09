@@ -13,35 +13,24 @@ phases:
       python: 3.11
       java: corretto17
     commands:
-      - echo "Installing Trivy..."
+      - echo "Installing Trivy & SonarQube scanner..."
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
-
-      - echo "Installing SonarQube scanner..."
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
-      - unzip sonar-scanner.zip > /dev/null
+      - unzip sonar-scanner.zip
       - mv sonar-scanner-* sonar-scanner
       - export PATH=$PATH:$PWD/sonar-scanner/bin
-
-      - echo "Installing OWASP Dependency Check..."
-      - curl -sSLo dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
-      - unzip dependency-check.zip -d dependency-check > /dev/null
-      - chmod +x dependency-check/dependency-check/bin/dependency-check.sh
 
   pre_build:
     commands:
       - echo "Running Trivy scan..."
       - ./trivy fs . > trivy-scan-report.txt || true
 
-      - echo "Running OWASP Dependency Check..."
-      - mkdir -p dependency-check-report
-      - ./dependency-check/dependency-check/bin/dependency-check.sh --project "Swiggy_Clone" --scan . --format ALL --out dependency-check-report || true
-
-      - echo "Running SonarQube scan..."
-      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN || true
+      - echo "Running SonarQube analysis..."
+      - sonar-scanner -X -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.128.31:9000 -Dsonar.login=$SONAR_TOKEN
 
   build:
     commands:
-      - echo "Logging into DockerHub..."
+      - echo "Logging in to DockerHub..."
       - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
 
       - echo "Building Docker image..."
@@ -55,10 +44,16 @@ phases:
       - echo "Generating imagedefinitions.json..."
       - printf '[{"name":"swiggy","imageUri":"%s/%s/swiggy:latest"}]' $DOCKER_REGISTRY_URL $DOCKER_REGISTRY_USERNAME > imagedefinitions.json
 
+      - echo "Sending build status via SES..."
+      # |
+      #  aws ses send-email \
+      #    --from "svs240395@gmail.com" \
+      #    --destination '{"ToAddresses":["svs240395@gmail.com"]}' \
+      #    --message '{"Subject":{"Data":"CodeBuild Status: '$CODEBUILD_BUILD_ID'"}, "Body":{"Text":{"Data":"Build status: '$CODEBUILD_BUILD_STATUS'"}}}' \
+      #    --region "ap-south-1"
+
 artifacts:
-  base-directory: .
   files:
     - appspec.yaml
     - imagedefinitions.json
     - trivy-scan-report.txt
-    - dependency-check-report/**/*
